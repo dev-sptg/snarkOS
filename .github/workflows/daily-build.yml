@@ -1,0 +1,211 @@
+name: "Daily build"
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  ubuntu:
+    name: Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build Leo
+        run: |
+          cargo build --all --release && strip target/release/snarkos
+
+      - id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Zip
+        run: |
+          mkdir tempdir
+          mv target/release/snarkos tempdir
+          cd tempdir
+          zip -r snarkos-${{ steps.get_version.outputs.version }}-x86_64-unknown-linux-gnu.zip snarkos
+          cd ..
+          mv tempdir/snarkos-${{ steps.get_version.outputs.version }}-x86_64-unknown-linux-gnu.zip .
+
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYY-MM-DD
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          tag_name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          files: |
+            snarkos-${{ steps.get_version.outputs.version }}-x86_64-unknown-linux-gnu.zip
+
+  macos:
+    name: macOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build Leo
+        run: |
+          cargo build --all --release && strip target/release/snarkos
+
+      - id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Zip
+        run: |
+          mkdir tempdir
+          mv target/release/snarkos tempdir
+          cd tempdir
+          zip -r snarkos-${{ steps.get_version.outputs.version }}-x86_64-apple-darwin.zip snarkos
+          cd ..
+          mv tempdir/snarkos-${{ steps.get_version.outputs.version }}-x86_64-apple-darwin.zip .
+
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYY-MM-DD
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          tag_name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          files: |
+            snarkos-${{ steps.get_version.outputs.version }}-x86_64-apple-darwin.zip
+
+  macos_m1:
+    name: macOS M1
+    runs-on: macos-latest
+    steps:
+      - name: Xcode Select
+        uses: devbotsxyz/xcode-select@v1
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          target: aarch64-apple-darwin
+          toolchain: stable
+          override: true
+          components: rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build Leo
+        run: |
+          SDKROOT=$(xcrun -sdk macosx11.1 --show-sdk-path) \
+          MACOSX_DEPLOYMENT_TARGET=$(xcrun -sdk macosx11.1 --show-sdk-platform-version) \
+          cargo build --all --release --target=aarch64-apple-darwin && strip target/aarch64-apple-darwin/release/snarkos
+
+      - id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Zip
+        run: |
+          mkdir tempdir
+          mv target/aarch64-apple-darwin/release/snarkos tempdir
+          cd tempdir
+          zip -r snarkos-${{ steps.get_version.outputs.version }}-aarch64-apple-darwin.zip snarkos
+          cd ..
+          mv tempdir/snarkos-${{ steps.get_version.outputs.version }}-aarch64-apple-darwin.zip .
+
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYY-MM-DD
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          tag_name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          files: |
+            snarkos-${{ steps.get_version.outputs.version }}-aarch64-apple-darwin.zip
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "14"
+          directory: ${{ runner.temp }}/llvm
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Set LIBCLANG_PATH
+        run: echo "LIBCLANG_PATH=$((gcm clang).source -replace "clang.exe")" >> $env:GITHUB_ENV
+
+      - name: Build Leo
+        run: |
+          cargo build --all --release
+
+      - id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Zip
+        run: |
+          Compress-Archive target/release/snarkos.exe snarkos-${{ steps.get_version.outputs.version }}-x86_64-pc-windows-msvc.zip
+
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYY-MM-DD
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          tag_name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          files: |
+            snarkos-${{ steps.get_version.outputs.version }}-x86_64-pc-windows-msvc.zip
