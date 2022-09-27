@@ -38,10 +38,10 @@ futures = { version = "0.3" }
 hyper = { version = "0.14" }
 hyper-tls = { version = "0.5" }
 indexmap = { version = "1.9", features = ["rayon"] }
-once_cell = { version = "1.13.0" }
+once_cell = { version = "1.15.0" }
 parking_lot = { version = "0.12" }
 rusoto_core = { version = "0.48" }
-tokio-util = { version = "0.7.3" }
+tokio-util = { version = "0.7.4" }
 warp = { version = "0.3" }
 
 [dependencies.snarkos-environment]
@@ -51,7 +51,7 @@ version = "2.0.2"
 [dependencies.snarkvm]
 #path = "../snarkVM"
 git = "https://github.com/AleoHQ/snarkVM.git"
-rev = "b2cee23"
+rev = "1aa7af9"
 features = ["circuit", "console", "parallel", "rest", "utilities"]
 
 [dependencies.aleo-std]
@@ -85,7 +85,7 @@ version = "0.8"
 version = "1"
 
 [dependencies.reqwest]
-version = "0.11.11"
+version = "0.11.12"
 
 [dependencies.rocksdb]
 version = "0.19"
