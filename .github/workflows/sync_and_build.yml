@@ -18,7 +18,7 @@ jobs:
           # REQUIRED if your upstream repo is private (see wiki)
           persist-credentials: false
           fetch-depth: 0
-          
+
       # REQUIRED step
       # Step 2: run the sync action
       - name: Sync upstream changes
@@ -31,7 +31,7 @@ jobs:
           upstream_sync_branch: testnet3
           upstream_sync_repo: AleoHQ/snarkOS
           upstream_repo_access_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-          upstream_pull_args: '--allow-unrelated-histories
+          upstream_pull_args: '--allow-unrelated-histories'
 
           # Set test_mode true to run tests instead of the true action!!
           test_mode: false
