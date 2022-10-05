@@ -80,7 +80,7 @@ jobs:
       - name: Build
         run: |
           docker pull clux/muslrust:stable
-          docker run -v cargo-cache:/root/.cargo/registry -v $PWD:/volume --rm -t clux/muslrust:stable /bin/bash -c "apt update && apt install -y cmake clang libclang-dev && cargo build --target x86_64-unknown-linux-musl --all --release" && ldd target/x86_64-unknown-linux-musl/release/snarkos
+          docker run -v cargo-cache:/root/.cargo/registry -v $PWD:/volume --rm -t clux/muslrust:stable /bin/bash -c "apt update && apt install -y cmake clang libclang-dev musl-g++ && cargo build --target x86_64-unknown-linux-musl --all --release" && ldd target/x86_64-unknown-linux-musl/release/snarkos
       - id: get_version
         uses: battila7/get-version-action@v2
 
