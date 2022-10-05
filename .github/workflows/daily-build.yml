@@ -59,6 +59,54 @@ jobs:
           files: |
             snarkos-${{ steps.get_version.outputs.version }}-x86_64-unknown-linux-gnu.zip
 
+  linux-musl:
+    name: Linux musl
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt
+          target: x86_64-unknown-linux-musl
+          default: stable-x86_64-unknown-linux-musl
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: |
+          docker pull clux/muslrust:stable
+          docker run -v cargo-cache:/root/.cargo/registry -v $PWD:/volume --rm -t clux/muslrust:stable cargo build --target x86_64-unknown-linux-musl --all --release && ldd target/x86_64-unknown-linux-musl/release/snarkos
+      - id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Zip
+        run: |
+          mkdir tempdir
+          cp target/x86_64-unknown-linux-musl/release/snarkos tempdir
+          strip tempdir/snarkos
+          cd tempdir
+          zip -r snarkos-${{ steps.get_version.outputs.version }}-x86_64-unknown-linux-musl.zip snarkos
+          cd ..
+          mv tempdir/snarkos-${{ steps.get_version.outputs.version }}-x86_64-unknown-linux-musl.zip .
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYY-MM-DD
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          tag_name: "daily(${{ steps.current-time.outputs.formattedTime }})"
+          files: |
+            snarkos-${{ steps.get_version.outputs.version }}-x86_64-unknown-linux-musl.zip
+
   macos:
     name: macOS
     runs-on: macos-latest
